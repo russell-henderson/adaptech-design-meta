@@ -497,5 +497,7 @@ Next Phase:
 ## Repo Structure
 - Root repository (`F:/adaptech-design`) holds project docs and tracks `web/` as a submodule temporarily due to file-lock contention during subtree migration.
 - `web/` remains the Next.js app repository with its own commit history and remote lifecycle.
+- Root meta repo: `adaptech-design-meta` (`https://github.com/russell-henderson/adaptech-design-meta.git`)
+- Web app repo: `adaptech-design-web` (`https://github.com/russell-henderson/adaptech-design-web.git`)
 
 
