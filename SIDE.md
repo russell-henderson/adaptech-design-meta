@@ -1,77 +1,131 @@
-Choose **Path 1 (two repos)**.
+Understood. You’ve got the **web remote URL**:
 
-Reason: you already have a working submodule setup and a clean `web` history. Path 2 would force a structural rewrite (submodule removal + subtree import) and increases risk for zero immediate benefit.
+* `https://github.com/russell-henderson/adaptech-design-web`
 
-What you do next is entirely deterministic once you have the URLs.
+And you’re seeing **another branch named `aadaptech-design`** that “will not commit.”
 
-## You paste (exact labels)
+That symptom almost always comes from one of these states:
 
-* `ROOT_REPO_URL=...`
-* `WEB_REPO_URL=...`
+* you’re in a **detached HEAD** (not actually on a branch), or
+* the branch is in a weird state (or you’re trying to commit in the wrong repo), or
+* you created a branch name you did not intend and you’re currently on a different branch than you think.
 
-## Then run these commands in this order
-
-### 0) Make sure nothing is using `web/` (close dev server, VS Code file watchers if possible)
-
-### 1) Configure and push the **web** repo first
-
-Because the root submodule pointer should reference a commit that exists on the remote.
-
-```bash
-git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web remote add origin <WEB_REPO_URL>
-git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web branch -M main
-git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web push -u origin main
-```
-
-### 2) Configure and push the **root** repo
-
-```bash
-git -C F:/adaptech-design remote add origin <ROOT_REPO_URL>
-git -C F:/adaptech-design branch -M main
-git -C F:/adaptech-design push -u origin main
-```
-
-### 3) Make the root repo’s submodule point at the **web remote**
-
-Right now the submodule likely points to a local path. Set it to the remote URL:
-
-```bash
-git -C F:/adaptech-design config -f .gitmodules submodule.web.url <WEB_REPO_URL>
-git -C F:/adaptech-design add .gitmodules web
-git -C F:/adaptech-design commit -m "chore(submodule): point web to remote origin"
-git -C F:/adaptech-design push
-```
-
-### 4) Verify a fresh clone would work (quick local check)
-
-In any temp folder:
-
-```bash
-git clone <ROOT_REPO_URL> adaptech-design-clone-test
-cd adaptech-design-clone-test
-git submodule update --init --recursive
-```
-
-If that completes without prompts/errors, you’re done.
+Below is the clean fix path, step-by-step, with exact commands.
 
 ---
 
-## Important note about SIDE.md being modified
+# Step 1: Fix the root repo branch so it can commit normally
 
-Before pushing root, either:
+Run this in **root** (`F:\adaptech-design`):
 
-* commit the latest SIDE.md change, or
-* revert it so the root push is deterministic.
+```bash
+git -C F:/adaptech-design status
+git -C F:/adaptech-design branch -vv
+git -C F:/adaptech-design rev-parse --abbrev-ref HEAD
+```
 
-To commit it:
+Now apply this **without guessing**:
+
+## If `rev-parse` prints `HEAD` (detached)
+
+Attach to a real branch:
+
+```bash
+git -C F:/adaptech-design switch -c main
+```
+
+## If it prints `aadaptech-design` (you’re on that branch)
+
+Rename it to `main`:
+
+```bash
+git -C F:/adaptech-design branch -M main
+```
+
+## If it prints something else (like `master` or `adaptech-design`)
+
+Rename it to `main`:
+
+```bash
+git -C F:/adaptech-design branch -M main
+```
+
+At this point, committing should work.
+
+If `SIDE.md` is modified and you want it included:
 
 ```bash
 git -C F:/adaptech-design add SIDE.md
 git -C F:/adaptech-design commit -m "docs: update SIDE instructions"
 ```
 
-Then continue with the root push steps above.
+(If you do not want to commit it, revert it instead: `git -C F:/adaptech-design restore SIDE.md`)
 
 ---
 
-Paste the two URLs and I’ll respond with the final command block with the placeholders replaced.
+# Step 2: Set up and push the web repo remote
+
+Run these in **web** (`F:\adaptech-design\web`):
+
+```bash
+git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web remote -v
+git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web branch -vv
+```
+
+If no origin exists, add it:
+
+```bash
+git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web remote add origin https://github.com/russell-henderson/adaptech-design-web.git
+```
+
+Make sure branch is `main`:
+
+```bash
+git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web branch -M main
+```
+
+Push:
+
+```bash
+git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web push -u origin main
+```
+
+---
+
+# Step 3: Root repo remote (you did not give this URL yet)
+
+You still need a **root repo URL** (separate from the web repo) if you want the **submodule workflow** to work correctly.
+
+Typical root repo URL would be something like:
+
+* `https://github.com/russell-henderson/adaptech-design` (root docs repo)
+
+Once you have it, you will run:
+
+```bash
+git -C F:/adaptech-design remote add origin <ROOT_REPO_URL>.git
+git -C F:/adaptech-design push -u origin main
+```
+
+---
+
+# Step 4: Point the root submodule to the web remote
+
+After both repos have origins and are pushed:
+
+```bash
+git -C F:/adaptech-design config -f .gitmodules submodule.web.url https://github.com/russell-henderson/adaptech-design-web.git
+git -C F:/adaptech-design add .gitmodules web
+git -C F:/adaptech-design commit -m "chore(submodule): point web to remote origin"
+git -C F:/adaptech-design push
+```
+
+---
+
+## What I need from you now
+
+Paste **the root repo URL** you want to use (the docs + submodule pointer repo). It will look like:
+
+* `https://github.com/russell-henderson/<something>`
+
+Once you paste it, I’ll give you the exact final command block with no placeholders.
