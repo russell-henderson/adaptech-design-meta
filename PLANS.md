@@ -494,4 +494,8 @@ Next Phase:
 - CMS field mapping pass for home/nav content objects
 - Performance pass for home scrolling/observer behavior under low-end devices
 
+## Repo Structure
+- Root repository (`F:/adaptech-design`) holds project docs and tracks `web/` as a submodule temporarily due to file-lock contention during subtree migration.
+- `web/` remains the Next.js app repository with its own commit history and remote lifecycle.
+
 
