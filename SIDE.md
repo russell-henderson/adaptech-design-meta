@@ -1,47 +1,21 @@
-Good recovery. Given the lock contention, **submodule is an acceptable stopgap** and it keeps you moving without fighting Windows file locks. You can always convert to subtree later when nothing has `web/` open.
+Choose **Path 1 (two repos)**.
 
-### Do next (in order)
+Reason: you already have a working submodule setup and a clean `web` history. Path 2 would force a structural rewrite (submodule removal + subtree import) and increases risk for zero immediate benefit.
 
-## 1) Commit the two untracked root files
+What you do next is entirely deterministic once you have the URLs.
 
-From root:
+## You paste (exact labels)
 
-```bash
-git -C F:/adaptech-design add .markdownlint-cli2.yaml SIDE.md
-git -C F:/adaptech-design commit -m "chore: add markdownlint config and SIDE instructions"
-```
+* `ROOT_REPO_URL=...`
+* `WEB_REPO_URL=...`
 
-## 2) Verify submodule is properly recorded
+## Then run these commands in this order
 
-Run:
+### 0) Make sure nothing is using `web/` (close dev server, VS Code file watchers if possible)
 
-```bash
-git -C F:/adaptech-design submodule status
-```
+### 1) Configure and push the **web** repo first
 
-You should see one line for `web` with a commit hash.
-
-Also check root status is clean:
-
-```bash
-git -C F:/adaptech-design status --short
-```
-
-## 3) Add origin and push (once you have the URL)
-
-When you have the GitHub URL for the **root** repo:
-
-```bash
-git -C F:/adaptech-design remote add origin <ROOT_REPO_URL>
-git -C F:/adaptech-design branch -M main
-git -C F:/adaptech-design push -u origin main
-```
-
-### Important: pushing submodules
-
-A root push only records the submodule pointer. The **web repo must also have its own origin + push**, otherwise collaborators won’t be able to fetch the submodule content.
-
-So after root origin is set, also set `web` origin:
+Because the root submodule pointer should reference a commit that exists on the remote.
 
 ```bash
 git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web remote add origin <WEB_REPO_URL>
@@ -49,22 +23,55 @@ git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web branch -M
 git -c safe.directory=F:/adaptech-design/web -C F:/adaptech-design/web push -u origin main
 ```
 
-If you intend for **one single GitHub repo** only, don’t push yet, because submodules require a separate repo for `web`.
+### 2) Configure and push the **root** repo
 
-## 4) Document the repo structure clearly (quick, 2 lines)
+```bash
+git -C F:/adaptech-design remote add origin <ROOT_REPO_URL>
+git -C F:/adaptech-design branch -M main
+git -C F:/adaptech-design push -u origin main
+```
 
-Add a short note to `PLANS.md` (root) under “Repo Structure”:
+### 3) Make the root repo’s submodule point at the **web remote**
 
-* Root repo holds docs and tracks `web/` as a submodule (temporary due to file-lock contention).
-* `web/` is the Next.js app repo with its own history.
+Right now the submodule likely points to a local path. Set it to the remote URL:
+
+```bash
+git -C F:/adaptech-design config -f .gitmodules submodule.web.url <WEB_REPO_URL>
+git -C F:/adaptech-design add .gitmodules web
+git -C F:/adaptech-design commit -m "chore(submodule): point web to remote origin"
+git -C F:/adaptech-design push
+```
+
+### 4) Verify a fresh clone would work (quick local check)
+
+In any temp folder:
+
+```bash
+git clone <ROOT_REPO_URL> adaptech-design-clone-test
+cd adaptech-design-clone-test
+git submodule update --init --recursive
+```
+
+If that completes without prompts/errors, you’re done.
 
 ---
 
-### What I need from you
+## Important note about SIDE.md being modified
 
-Paste either:
+Before pushing root, either:
 
-* the **single GitHub URL** you want to use (if you plan to keep only `web` on GitHub and root local-only), or
-* **two URLs**: one for root, one for web (best practice with submodules).
+* commit the latest SIDE.md change, or
+* revert it so the root push is deterministic.
 
-Once you paste the URL(s), I’ll give you the exact remote commands with no ambiguity.
+To commit it:
+
+```bash
+git -C F:/adaptech-design add SIDE.md
+git -C F:/adaptech-design commit -m "docs: update SIDE instructions"
+```
+
+Then continue with the root push steps above.
+
+---
+
+Paste the two URLs and I’ll respond with the final command block with the placeholders replaced.
